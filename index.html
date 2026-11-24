@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1120">
+    <title>THE SAPRE TECH - Smart 40 CNC/VMC Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', sans-serif; }
+        .card-running { border-top: 4px solid #22c55e; }
+        .card-idle { border-top: 4px solid #eab308; }
+        .card-alarm { border-top: 4px solid #ef4444; }
+        input, select { text-transform: uppercase; }
+        @keyframes pulseAlert {
+            0%, 100% { background-color: rgba(220, 38, 38, 0.35); }
+            50% { background-color: rgba(220, 38, 38, 0.1); }
+        }
+        .blink-alert { animation: pulseAlert 1.2s infinite; }
+    </style>
+</head>
+<body class="p-3 md:p-5">
+
+    <!-- Top Header -->
+    <div class="flex flex-col xl:flex-row justify-between items-center mb-4 bg-slate-800/95 p-3.5 rounded-xl border border-slate-700 shadow-lg gap-3">
+        <div class="text-center xl:text-left">
+            <h1 class="text-xl md:text-3xl font-extrabold text-cyan-400 tracking-wide">🏭 THE SAPRE TECH</h1>
+            <p class="text-xs text-slate-300 font-semibold mt-0.5">SMART 40 CNC & VMC SHOPFLOOR SYSTEM (PC, MOBILE & TV)</p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-2">
+            <span id="live-clock" class="text-xs md:text-sm font-mono bg-slate-950 px-3 py-1.5 rounded text-green-400 border border-slate-700"></span>
+
+            <!-- Sound Alert Toggle -->
+            <button onclick="toggleSound()" id="sound-btn" class="px-2.5 py-1.5 rounded text-xs font-bold bg-slate-700 hover:bg-slate-600 text-yellow-300 border border-slate-600">
+                🔇 Sound: OFF
+            </button>
+
+            <!-- TV Auto-Scroll Toggle -->
+            <button onclick="toggleAutoScroll()" id="scroll-btn" class="px-2.5 py-1.5 rounded text-xs font-bold bg-indigo-900/80 hover:bg-indigo-800 text-indigo-200 border border-indigo-700">
+                📺 TV Scroll: OFF
+            </button>
+
+            <!-- Email Report Button -->
+            <button onclick="sendEmailReport()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow">
+                📧 Email Report
+            </button>
+
+            <!-- Excel Download Button -->
+            <button onclick="downloadExcelReport()" class="px-3 py-1.5 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow">
+                📥 Excel Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Live Summary Strip (7 Boxes) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2.5 mb-4">
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Total M/C</p>
+            <p class="text-xl font-extrabold text-white">40</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Running</p>
+            <p id="running-count" class="text-xl font-extrabold text-green-400">0</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Idle</p>
+            <p id="idle-count" class="text-xl font-extrabold text-yellow-400">0</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center">
+            <p class="text-[10px] text-slate-400 uppercase">Alarm</p>
+            <p id="alarm-count" class="text-xl font-extrabold text-red-400">0</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-green-800 text-center">
+            <p class="text-[10px] text-green-300 uppercase">🌟 Good Work</p>
+            <p id="good-count" class="text-xl font-extrabold text-green-400">0</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-red-800 text-center">
+            <p class="text-[10px] text-red-300 uppercase">🚨 Where R U?</p>
+            <p id="alert-count" class="text-xl font-extrabold text-red-400">0</p>
+        </div>
+        <div class="bg-slate-800 p-2.5 rounded-xl border border-orange-800 text-center col-span-2 sm:col-span-1">
+            <p class="text-[10px] text-orange-300 uppercase">🛠️ Tool Alert</p>
+            <p id="tool-alert-count" class="text-xl font-extrabold text-orange-400">0</p>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="flex flex-col md:flex-row gap-2.5 mb-4 bg-slate-800/70 p-3 rounded-xl border border-slate-700">
+        <input type="text" id="search-input" onkeyup="renderDashboard()" placeholder="🔍 SEARCH MACHINE (CNC-01), OPERATOR OR PART NAME..." class="flex-1 p-2 rounded-lg bg-slate-900 text-white border border-slate-600 text-xs">
+        
+        <div class="flex flex-wrap gap-1.5">
+            <button onclick="setFilter('ALL')" id="btn-ALL" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white">ALL (40)</button>
+            <button onclick="setFilter('RUNNING')" id="btn-RUNNING" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-green-400">RUNNING</button>
+            <button onclick="setFilter('WHERE_ARE_YOU')" id="btn-WHERE_ARE_YOU" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-red-400">🚨 WHERE R U?</button>
+            <button onclick="setFilter('IMPROVEMENT')" id="btn-IMPROVEMENT" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-yellow-400">⚠️ IMPROVEMENT</button>
+            <button onclick="setFilter('GOOD')" id="btn-GOOD" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-emerald-300">🌟 GOOD</button>
+            <button onclick="setFilter('TOOL_DUE')" id="btn-TOOL_DUE" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-orange-300">🛠️ TOOL DUE</button>
+        </div>
+    </div>
+
+    <!-- 40 Machines Responsive Grid -->
+    <div id="machine-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <!-- 40 Cards generated here -->
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="job-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 p-5 rounded-xl w-full max-w-md border border-slate-600 shadow-2xl">
+            <h2 class="text-base font-bold text-cyan-400 mb-1">⚙️ Update Machine & Quality Details</h2>
+            <p id="job-modal-machine" class="text-xs text-slate-400 mb-3"></p>
+            
+            <div class="space-y-2 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1">OPERATOR NAME</label>
+                    <input type="text" id="input-operator" oninput="this.value = this.value.toUpperCase()" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1">DUTY TIMING</label>
+                    <input type="text" id="input-timing" oninput="this.value = this.value.toUpperCase()" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1">PART NAME</label>
+                    <input type="text" id="input-part" oninput="this.value = this.value.toUpperCase()" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-slate-300 mb-1">TARGET QTY</label>
+                        <input type="number" id="input-target" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">REJECTED QTY</label>
+                        <input type="number" id="input-rejected" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">TOOL LIFE %</label>
+                        <input type="number" id="input-toolLife" max="100" min="0" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-300 mb-1">STATUS</label>
+                        <select id="input-status" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                            <option value="RUNNING">RUNNING</option>
+                            <option value="IDLE">IDLE</option>
+                            <option value="ALARM">ALARM</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">PERFORMANCE</label>
+                        <select id="input-ontime" class="w-full p-2 rounded bg-slate-900 text-white border border-slate-600">
+                            <option value="true">GOOD WORKING</option>
+                            <option value="false">IMPROVEMENT</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="closeJobModal()" class="px-3 py-1.5 bg-slate-600 rounded text-xs">Cancel</button>
+                <button onclick="saveJobDetails()" class="px-4 py-1.5 bg-cyan-600 rounded text-xs font-bold text-white">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Web App Manifest Injection (Allows "Add to Home Screen" as App)
+        const manifestData = {
+            name: "THE SAPRE TECH - CNC/VMC Monitor",
+            short_name: "Sapre Tech",
+            display: "standalone",
+            background_color: "#0b1120",
+            theme_color: "#0b1120"
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const linkEl = document.createElement('link');
+        linkEl.rel = 'manifest';
+        linkEl.href = manifestURL;
+        document.head.appendChild(linkEl);
+
+        const operators = ["RUSHABH SHINDE", "SANYOG KAMBLE", "NITIN KUMBHAR", "VIKAS KADAM", "AMIT PATIL", "SURAJ JADHAV", "ROHIT MORE", "PRASHANT CHAVAN", "AKASH MANE", "SWAPNIL CHOUGULE"];
+        const parts = ["SHAFT COUPLING - A12", "GEAR BLANK - B05", "VALVE BODY - V90", "PUMP HOUSING - P22", "FLANGE HUB - F14", "PISTON PIN - K08", "BEARING CAP - C19", "SPINDLE NUT - S04"];
+        const controllers = ["FANUC 0i-TF", "SIEMENS 828D", "MITSUBISHI M80", "FANUC 0i-MF"];
+
+        let machines = [];
+        let currentFilter = "ALL";
+        let selectedMachineIndex = null;
+        let soundEnabled = false;
+        let autoScrollEnabled = false;
+        let scrollInterval = null;
+
+        // Generate 40 Machines (25 CNC + 15 VMC)
+        for (let i = 1; i <= 40; i++) {
+            let isCNC = i <= 25;
+            let num = isCNC ? i : (i - 25);
+            let mId = (isCNC ? "CNC-" : "VMC-") + String(num).padStart(2, '0');
+            
+            let status = "RUNNING";
+            let onTime = true;
+            let idleMinutes = 0;
+            let toolLifeUsed = 35 + ((i * 7) % 60); // % of tool life used
+
+            if (i % 9 === 0) {
+                status = "IDLE";
+                idleMinutes = 16;
+            } else if (i % 13 === 0) {
+                status = "ALARM";
+                idleMinutes = 24;
+            } else if (i % 5 === 0) {
+                status = "RUNNING";
+                onTime = false;
+            }
+
+            let target = isCNC ? 150 : 80;
+            let count = Math.floor(target * (0.4 + (i % 5) * 0.12));
+            let rejected = (i % 6 === 0) ? 3 : ((i % 4 === 0) ? 1 : 0);
+
+            machines.push({
+                id: mId,
+                controller: controllers[i % controllers.length],
+                status: status,
+                partName: parts[i % parts.length],
+                operator: operators[i % operators.length],
+                timing: i % 2 === 0 ? "08:00 AM - 05:00 PM" : "09:00 AM - 06:00 PM",
+                partCount: count,
+                rejected: rejected,
+                target: target,
+                toolLifeUsed: toolLifeUsed,
+                onTime: onTime,
+                idleMinutes: idleMinutes
+            });
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById("sound-btn");
+            btn.innerText = soundEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+            if (soundEnabled) playBeep();
+        }
+
+        function playBeep() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function toggleAutoScroll() {
+            autoScrollEnabled = !autoScrollEnabled;
+            const btn = document.getElementById("scroll-btn");
+            if (autoScrollEnabled) {
+                btn.innerText = "📺 TV Scroll: ON";
+                btn.classList.replace("bg-indigo-900/80", "bg-indigo-600");
+                scrollInterval = setInterval(() => {
+                    if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight - 10) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                        window.scrollBy({ top: 300, behavior: 'smooth' });
+                    }
+                }, 2500);
+            } else {
+                btn.innerText = "📺 TV Scroll: OFF";
+                btn.classList.replace("bg-indigo-600", "bg-indigo-900/80");
+                clearInterval(scrollInterval);
+            }
+        }
+
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-cyan-600', 'text-white');
+                btn.classList.add('bg-slate-700');
+            });
+            const activeBtn = document.getElementById('btn-' + filterType);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-700');
+                activeBtn.classList.add('bg-cyan-600', 'text-white');
+            }
+            renderDashboard();
+        }
+
+        function getAlertType(m) {
+            if (m.status !== "RUNNING" && m.idleMinutes >= 10) return "WHERE_ARE_YOU";
+            if (m.onTime) return "GOOD";
+            return "IMPROVEMENT";
+        }
+
+        function renderDashboard() {
+            const grid = document.getElementById("machine-grid");
+            const searchQuery = document.getElementById("search-input").value.toUpperCase();
+            grid.innerHTML = "";
+
+            let running = 0, idle = 0, alarm = 0, good = 0, whereAreYou = 0, toolDueCount = 0;
+
+            machines.forEach((m, index) => {
+                const alertType = getAlertType(m);
+                const isToolDue = m.toolLifeUsed >= 85;
+
+                if (m.status === "RUNNING") running++;
+                else if (m.status === "IDLE") idle++;
+                else alarm++;
+
+                if (alertType === "GOOD") good++;
+                if (alertType === "WHERE_ARE_YOU") whereAreYou++;
+                if (isToolDue) toolDueCount++;
+
+                const matchesSearch = m.id.includes(searchQuery) || m.operator.includes(searchQuery) || m.partName.includes(searchQuery);
+                const matchesFilter = (currentFilter === "ALL") || 
+                                      (currentFilter === "RUNNING" && m.status === "RUNNING") ||
+                                      (currentFilter === "TOOL_DUE" && isToolDue) ||
+                                      (currentFilter === alertType);
+
+                if (!matchesSearch || !matchesFilter) return;
+
+                let cardClass = m.status === "RUNNING" ? "card-running" : (m.status === "IDLE" ? "card-idle" : "card-alarm");
+                let badgeColor = m.status === "RUNNING" ? "text-green-400 bg-green-950 border-green-700" : 
+                                 (m.status === "IDLE" ? "text-yellow-400 bg-yellow-950 border-yellow-700" : "text-red-400 bg-red-950 border-red-700");
+
+                let bannerHTML = "";
+                if (alertType === "WHERE_ARE_YOU") {
+                    bannerHTML = `<div class="mt-2 py-1 px-2 rounded border border-red-500 text-red-300 text-[11px] font-extrabold text-center blink-alert">🚨 WHERE ARE YOU? (${m.idleMinutes}m)</div>`;
+                } else if (alertType === "GOOD") {
+                    bannerHTML = `<div class="mt-2 py-1 px-2 rounded bg-green-950/70 border border-green-700 text-green-300 text-[11px] font-bold text-center">🌟 GOOD WORKING</div>`;
+                } else {
+                    bannerHTML = `<div class="mt-2 py-1 px-2 rounded bg-yellow-950/70 border border-yellow-700 text-yellow-300 text-[11px] font-bold text-center">⚠️ IMPROVEMENT NEEDED</div>`;
+                }
+
+                let toolAlertHTML = isToolDue 
+                    ? `<div class="mt-1.5 py-0.5 px-2 rounded bg-orange-950/80 border border-orange-600 text-orange-300 text-[10px] font-bold text-center">🛠️ TOOL CHANGE DUE (${m.toolLifeUsed}%)</div>`
+                    : `<div class="mt-1.5 text-[10px] text-slate-400 flex justify-between px-1"><span>🛠️ Tool Life Used:</span><span class="text-slate-200 font-semibold">${m.toolLifeUsed}%</span></div>`;
+
+                let okQty = Math.max(0, m.partCount - m.rejected);
+                let progress = Math.min(100, Math.round((okQty / m.target) * 100));
+
+                grid.innerHTML += `
+                    <div class="bg-slate-800/95 p-3 rounded-xl border border-slate-700 shadow ${cardClass} flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-extrabold text-white">${m.id}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${badgeColor}">${m.status}</span>
+                            </div>
+
+                            ${bannerHTML}
+                            ${toolAlertHTML}
+
+                            <div class="mt-2 space-y-1 text-[11px] bg-slate-900/70 p-2 rounded-lg border border-slate-700/50">
+                                <p class="text-cyan-300 font-bold truncate" title="${m.partName}">🔧 ${m.partName}</p>
+                                <p class="text-slate-200 truncate">👤 ${m.operator}</p>
+                                <p class="text-amber-300/90 text-[10px]">🕒 ${m.timing}</p>
+                            </div>
+
+                            <div class="mt-2">
+                                <div class="flex justify-between text-[10px] mb-1">
+                                    <span class="text-slate-300">OK: <b class="text-green-400">${okQty}</b> / Target: <b class="text-white">${m.target}</b></span>
+                                    <span class="text-red-400 font-semibold">Rej: ${m.rejected}</span>
+                                </div>
+                                <div class="w-full bg-slate-700 rounded-full h-1.5">
+                                    <div class="bg-cyan-400 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="openJobModal(${index})" class="mt-2.5 w-full py-1 bg-slate-700/80 hover:bg-cyan-800 rounded text-[10px] font-semibold text-slate-200 transition">
+                            ✏️ Edit / Quality / Tool
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById("running-count").innerText = running;
+            document.getElementById("idle-count").innerText = idle;
+            document.getElementById("alarm-count").innerText = alarm;
+            document.getElementById("good-count").innerText = good;
+            document.getElementById("alert-count").innerText = whereAreYou;
+            document.getElementById("tool-alert-count").innerText = toolDueCount;
+        }
+
+        function downloadExcelReport() {
+            let csv = "MACHINE ID,CONTROLLER,STATUS,PART NAME,OPERATOR NAME,TIMING,TOTAL QTY,OK QTY,REJECTED QTY,TARGET QTY,TOOL LIFE USED %,PERFORMANCE,IDLE MIN\n";
+            
+            machines.forEach(m => {
+                let okQty = Math.max(0, m.partCount - m.rejected);
+                let perf = getAlertType(m).replace("_", " ");
+                csv += `"${m.id}","${m.controller}","${m.status}","${m.partName}","${m.operator}","${m.timing}",${m.partCount},${okQty},${m.rejected},${m.target},${m.toolLifeUsed}%,"${perf}",${m.idleMinutes}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+            link.setAttribute("href", url);
+            link.setAttribute("download", `THE_SAPRE_TECH_REPORT_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function sendEmailReport() {
+            let runCount = machines.filter(m => m.status === "RUNNING").length;
+            let alertCount = machines.filter(m => getAlertType(m) === "WHERE_ARE_YOU").length;
+            let subject = encodeURIComponent("THE SAPRE TECH - 40 Machines Live Shift Summary");
+            let body = encodeURIComponent(
+                `THE SAPRE TECH - SHOPFLOOR SUMMARY\n` +
+                `Total Machines: 40\n` +
+                `Running: ${runCount}\n` +
+                `Where Are You Alerts: ${alertCount}\n` +
+                `Time: ${new Date().toLocaleString()}`
+            );
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        function openJobModal(index) {
+            selectedMachineIndex = index;
+            const m = machines[index];
+            document.getElementById("job-modal-machine").innerText = m.id + " (" + m.controller + ")";
+            document.getElementById("input-operator").value = m.operator;
+            document.getElementById("input-timing").value = m.timing;
+            document.getElementById("input-part").value = m.partName;
+            document.getElementById("input-target").value = m.target;
+            document.getElementById("input-rejected").value = m.rejected;
+            document.getElementById("input-toolLife").value = m.toolLifeUsed;
+            document.getElementById("input-status").value = m.status;
+            document.getElementById("input-ontime").value = m.onTime.toString();
+            document.getElementById("job-modal").classList.remove("hidden");
+        }
+
+        function closeJobModal() {
+            document.getElementById("job-modal").classList.add("hidden");
+        }
+
+        function saveJobDetails() {
+            if (selectedMachineIndex !== null) {
+                const m = machines[selectedMachineIndex];
+                m.operator = document.getElementById("input-operator").value.toUpperCase() || "UNASSIGNED";
+                m.timing = document.getElementById("input-timing").value.toUpperCase() || "-";
+                m.partName = document.getElementById("input-part").value.toUpperCase() || "-";
+                m.target = parseInt(document.getElementById("input-target").value) || 100;
+                m.rejected = parseInt(document.getElementById("input-rejected").value) || 0;
+                m.toolLifeUsed = Math.min(100, Math.max(0, parseInt(document.getElementById("input-toolLife").value) || 0));
+                m.status = document.getElementById("input-status").value;
+                m.onTime = (document.getElementById("input-ontime").value === "true");
+                m.idleMinutes = (m.status === "RUNNING") ? 0 : 15;
+                renderDashboard();
+                closeJobModal();
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("live-clock").innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        }
+
+        setInterval(() => {
+            let alertTriggered = false;
+            machines.forEach(m => {
+                if (m.status === "RUNNING" && m.partCount < m.target) {
+                    if (Math.random() > 0.4) {
+                        m.partCount += 1;
+                        if (m.partCount % 15 === 0 && m.toolLifeUsed < 100) {
+                            m.toolLifeUsed += 1;
+                        }
+                    }
+                } else if (m.status !== "RUNNING") {
+                    m.idleMinutes += 1;
+                    if (m.idleMinutes === 10) alertTriggered = true;
+                }
+            });
+            if (alertTriggered) playBeep();
+            renderDashboard();
+        }, 4000);
+
+        setInterval(updateClock, 1000);
+        updateClock();
+        renderDashboard();
+    </script>
+</body>
+</html>
