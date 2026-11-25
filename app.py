@@ -1,5 +1,4 @@
-﻿from html import escape
-import pandas as pd
+﻿import pandas as pd
 import streamlit as st
 
 st.set_page_config(
@@ -26,148 +25,11 @@ def safe_int(val, default=0):
         return default
 
 
-# =====================================================
-# CUSTOM CSS (तुमचा मूळ CSS इथे ठेवू शकता)
-# =====================================================
-st.markdown(
-    """
-    <style>
-    .m-card {
-        background: #0f172a;
-        border: 1px solid #1e293b;
-        border-radius: 14px;
-        padding: 14px;
-        margin-bottom: 12px;
-        color: #f8fafc;
-    }
-    .m-card.compact {
-        padding: 10px;
-    }
-    .m-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 8px;
-    }
-    .m-id {
-        font-size: 16px;
-        font-weight: 700;
-    }
-    .m-sub {
-        font-size: 12px;
-        color: #94a3b8;
-        margin-top: 2px;
-    }
-    .pill {
-        font-size: 11px;
-        padding: 3px 9px;
-        border-radius: 999px;
-        font-weight: 600;
-    }
-    .pill-Running {
-        background: rgba(34, 197, 94, 0.18);
-        color: #4ade80;
-    }
-    .pill-Idle {
-        background: rgba(234, 179, 8, 0.18);
-        color: #facc15;
-    }
-    .pill-Alarm {
-        background: rgba(239, 68, 68, 0.18);
-        color: #f87171;
-    }
-    .banner-good {
-        margin-top: 10px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        background: rgba(34, 197, 94, 0.15);
-        color: #4ade80;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .banner-warn {
-        margin-top: 10px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .op-box {
-        margin-top: 10px;
-        padding: 10px;
-        border-radius: 10px;
-        background: #1e293b;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .op-name {
-        font-size: 14px;
-        font-weight: 600;
-        margin-top: 2px;
-    }
-    .mini-tag {
-        display: inline-block;
-        background: #0f172a;
-        border: 1px solid #334155;
-        border-radius: 6px;
-        padding: 2px 6px;
-        font-size: 11px;
-        margin-left: 4px;
-    }
-    .prog-label {
-        display: flex;
-        justify-content: space-between;
-        font-size: 12px;
-        color: #cbd5e1;
-        margin-top: 10px;
-    }
-    .prog-track {
-        width: 100%;
-        height: 7px;
-        background: #1e293b;
-        border-radius: 999px;
-        overflow: hidden;
-        margin-top: 5px;
-    }
-    .prog-fill {
-        height: 100%;
-        background: #22c55e;
-    }
-    .kpi-row {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        margin-top: 10px;
-    }
-    .kpi-box {
-        background: #1e293b;
-        border-radius: 8px;
-        padding: 6px;
-        text-align: center;
-    }
-    .kpi-lbl {
-        font-size: 11px;
-        color: #94a3b8;
-    }
-    .kpi-val {
-        font-size: 13px;
-        font-weight: 700;
-        margin-top: 2px;
-    }
-    .m-foot {
-        display: flex;
-        justify-content: space-between;
-        font-size: 11px;
-        color: #94a3b8;
-        margin-top: 10px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+def safe_text(val, default="-"):
+    if val is None or pd.isna(val):
+        return default
+    text = str(val).strip()
+    return text if text else default
 
 
 # =====================================================
@@ -204,29 +66,57 @@ filtered = pd.DataFrame(
             "updated": "14:40:21",
         },
         {
-            "id": "CNC-03",
+            "id": "CNC-17",
             "mtype": "CNC Turning",
-            "program": "O1030_PART_03.NC",
+            "program": "O1170_PART_17.NC",
             "status": "Running",
-            "operator": "विक्रम माने",
-            "parts": 85,
+            "operator": "ऑपरेटर 17",
+            "parts": 160,
             "target": 200,
-            "rpm": 2235,
-            "oee": "77%",
+            "rpm": 2150,
+            "oee": "75%",
+            "message": "",
+            "note": "-",
+            "updated": "14:40:21",
+        },
+        {
+            "id": "CNC-18",
+            "mtype": "CNC Turning",
+            "program": "O1180_PART_18.NC",
+            "status": "Idle",
+            "operator": "सुरेश शिंदे",
+            "parts": 160,
+            "target": 200,
+            "rpm": 0,
+            "oee": "68%",
             "message": "PLEASE IMPROVEMENT",
             "note": "-",
             "updated": "14:40:21",
         },
         {
-            "id": "CNC-04",
+            "id": "CNC-19",
             "mtype": "CNC Turning",
-            "program": "O1040_PART_04.NC",
+            "program": "O1190_PART_19.NC",
+            "status": "Running",
+            "operator": "ऑपरेटर 19",
+            "parts": 165,
+            "target": 200,
+            "rpm": 2400,
+            "oee": "76%",
+            "message": "",
+            "note": "-",
+            "updated": "14:40:21",
+        },
+        {
+            "id": "CNC-20",
+            "mtype": "CNC Turning",
+            "program": "O1200_PART_20.NC",
             "status": "Running",
             "operator": "संदीप पवार",
-            "parts": 90,
+            "parts": 170,
             "target": 200,
-            "rpm": 2280,
-            "oee": "80%",
+            "rpm": 3000,
+            "oee": "74%",
             "message": "GOOD WORKING",
             "note": "-",
             "updated": "14:40:21",
@@ -234,118 +124,92 @@ filtered = pd.DataFrame(
     ]
 )
 
+# =====================================================
+# HEADER & CONTROLS
+# =====================================================
 st.title("The Sapre Tech")
 
-if st.button("Toggle Compact Mode"):
-    st.session_state.compact_mode = not st.session_state.compact_mode
-    st.rerun()
+top_left, top_right = st.columns([3, 1])
+with top_left:
+    st.caption("Shift 1 (Morning: 8 AM - 4 PM) • Live Machine Monitoring")
+with top_right:
+    if st.button(
+        f"Compact: {'ON' if st.session_state.compact_mode else 'OFF'}",
+        use_container_width=True,
+    ):
+        st.session_state.compact_mode = not st.session_state.compact_mode
+        st.rerun()
 
+st.divider()
 
 # =====================================================
-# MACHINE CARDS GRID - SINGLE LINE CLEAN HTML
+# MACHINE CARDS GRID (NATIVE STREAMLIT COMPONENTS)
 # =====================================================
 cols_per_row = 5 if st.session_state.compact_mode else 4
 
-card_cls = (
-    "m-card compact"
-    if st.session_state.compact_mode
-    else "m-card"
-)
+status_badge = {
+    "Running": "🟢 Running",
+    "Idle": "🟡 Idle",
+    "Alarm": "🔴 Alarm",
+}
 
 for start in range(0, len(filtered), cols_per_row):
     row_cols = st.columns(cols_per_row)
     chunk = filtered.iloc[start : start + cols_per_row]
 
     for col, (_, m) in zip(row_cols, chunk.iterrows()):
-        raw_mid = str(m["id"]).strip()
-        mid = escape(raw_mid)
-        mtype = escape(str(m["mtype"]).strip())
-        prog = escape(str(m["program"]).strip())
+        raw_mid = safe_text(m["id"], "MACHINE")
+        mtype = safe_text(m["mtype"], "CNC")
+        prog = safe_text(m["program"], "-")
 
-        status = str(m["status"]).strip()
-        if status not in ["Running", "Idle", "Alarm"]:
+        status = safe_text(m["status"], "Idle")
+        if status not in status_badge:
             status = "Idle"
 
-        op = escape(str(m["operator"]).strip())
-        parts = max(safe_int(m["parts"]), 0)
+        op = safe_text(m["operator"], "-")
+        parts = max(safe_int(m["parts"], 0), 0)
         target = max(safe_int(m["target"], 1), 1)
-
         pct = min(int(round((parts / target) * 100)), 100)
 
-        rpm = escape(str(m["rpm"]).strip())
-        oee = escape(str(m["oee"]).strip())
-        msg = str(m["message"]).strip()
-        note = escape(str(m["note"]).strip())
-        upd = escape(str(m["updated"]).strip())
-
-        banner_html = ""
-        if msg == "GOOD WORKING":
-            banner_html = '<div class="banner-good">✔ GOOD WORKING</div>'
-        elif msg == "PLEASE IMPROVEMENT":
-            banner_html = '<div class="banner-warn">💬 PLEASE IMPROVEMENT</div>'
-
-        raw_card_html = f"""
-<div class="{card_cls}">
-<div class="m-top">
-<div>
-<div class="m-id">{mid}</div>
-<div class="m-sub">{mtype} • {prog}</div>
-</div>
-<span class="pill pill-{status}">{escape(status)}</span>
-</div>
-{banner_html}
-<div class="op-box">
-<div>
-<div class="m-sub" style="margin-top:0;">ऑपरेटर</div>
-<div class="op-name">{op}</div>
-</div>
-<div>
-<span class="mini-tag">ऑप</span>
-<span class="mini-tag">प्रो</span>
-<span class="mini-tag">💬</span>
-</div>
-</div>
-<div class="prog-label">
-<span>Progress</span>
-<span>{parts}/{target} ({pct}%)</span>
-</div>
-<div class="prog-track">
-<div class="prog-fill" style="width:{pct}%;"></div>
-</div>
-<div class="kpi-row">
-<div class="kpi-box">
-<div class="kpi-lbl">Parts</div>
-<div class="kpi-val">{parts}</div>
-</div>
-<div class="kpi-box">
-<div class="kpi-lbl">RPM</div>
-<div class="kpi-val">{rpm}</div>
-</div>
-<div class="kpi-box">
-<div class="kpi-lbl">OEE</div>
-<div class="kpi-val">{oee}</div>
-</div>
-</div>
-<div class="m-foot">
-<span>{note}</span>
-<span>{upd}</span>
-</div>
-</div>
-"""
-        card_html = "".join(
-            line.strip() for line in raw_card_html.splitlines() if line.strip()
-        )
+        rpm = safe_text(m["rpm"], "0")
+        oee = safe_text(m["oee"], "0%")
+        msg = safe_text(m["message"], "")
+        note = safe_text(m["note"], "-")
+        upd = safe_text(m["updated"], "-")
 
         with col:
-            st.markdown(
-                card_html,
-                unsafe_allow_html=True,
-            )
+            with st.container(border=True):
+                head_l, head_r = st.columns([2, 1])
+                with head_l:
+                    st.markdown(f"### {raw_mid}")
+                    st.caption(f"{mtype} • {prog}")
+                with head_r:
+                    st.markdown(f"**{status_badge[status]}**")
 
-            if st.button(
-                f"Edit {raw_mid}",
-                key=f"edit_btn_{raw_mid}",
-                use_container_width=True,
-            ):
-                st.session_state.selected_machine = raw_mid
-                st.rerun(scope="fragment")
+                if msg == "GOOD WORKING":
+                    st.success("✔ GOOD WORKING")
+                elif msg == "PLEASE IMPROVEMENT":
+                    st.warning("💬 PLEASE IMPROVEMENT")
+                elif msg:
+                    st.info(msg)
+
+                st.caption("ऑपरेटर")
+                st.markdown(f"**{op}**  •  `ऑप` `प्रो` `💬`")
+
+                st.caption(f"Progress: {parts}/{target} ({pct}%)")
+                st.progress(pct / 100.0)
+
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Parts", parts)
+                k2.metric("RPM", rpm)
+                k3.metric("OEE", oee)
+
+                st.caption(f"Note: {note}  |  Updated: {upd}")
+
+                if st.button(
+                    f"Edit {raw_mid}",
+                    key=f"edit_btn_{raw_mid}",
+                    use_container_width=True,
+                ):
+                    st.session_state.selected_machine = raw_mid
+                    st.toast(f"{raw_mid} निवडले आहे")
