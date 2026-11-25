@@ -8,122 +8,63 @@ st.set_page_config(
 )
 
 # =====================================================
-# SAMPLE / LIVE DATA (तुमचा SQLite `machines.db` किंवा DataFrame इथे जोडा)
+# ALL 40 MACHINES DATA (CNC-01 TO CNC-40)
+# (तुमचा खरा `machines.db` डेटा असेल तर इथे तो जोडा)
 # =====================================================
-machines_data = [
-    {
-        "id": "CNC-01",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 42,
-        "part": "GEAR BLANK - B05",
-        "operator": "SANYOG KAMBLE",
-        "shift": "09:00 AM - 06:00 PM",
-        "ok": 80,
-        "target": 150,
-        "rej": 0,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-02",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 49,
-        "part": "VALVE BODY - V90",
-        "operator": "NITIN KUMBHAR",
-        "shift": "08:00 AM - 05:00 PM",
-        "ok": 98,
-        "target": 150,
-        "rej": 0,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-03",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 56,
-        "part": "PUMP HOUSING - P22",
-        "operator": "VIKAS KADAM",
-        "shift": "09:00 AM - 06:00 PM",
-        "ok": 115,
-        "target": 150,
-        "rej": 0,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-04",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 63,
-        "part": "FLANGE HUB - F14",
-        "operator": "AMIT PATIL",
-        "shift": "08:00 AM - 05:00 PM",
-        "ok": 132,
-        "target": 150,
-        "rej": 1,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-05",
-        "status": "RUNNING",
-        "banner": "IMPROVEMENT NEEDED",
-        "banner_type": "warn",
-        "tool_life": 70,
-        "part": "PISTON PIN - K08",
-        "operator": "ROHAN DESAI",
-        "shift": "08:00 AM - 05:00 PM",
-        "ok": 105,
-        "target": 150,
-        "rej": 2,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-06",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 77,
-        "part": "BEARING CAP - C19",
-        "operator": "SWAPNIL MORE",
-        "shift": "09:00 AM - 06:00 PM",
-        "ok": 120,
-        "target": 150,
-        "rej": 0,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-07",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 84,
-        "part": "SPINDLE NUT - S04",
-        "operator": "PRAVIN JADHAV",
-        "shift": "08:00 AM - 05:00 PM",
-        "ok": 128,
-        "target": 150,
-        "rej": 0,
-        "tool_due": False,
-    },
-    {
-        "id": "CNC-08",
-        "status": "RUNNING",
-        "banner": "GOOD WORKING",
-        "banner_type": "good",
-        "tool_life": 91,
-        "part": "SHAFT COUPLING - A12",
-        "operator": "KIRAN SAWANT",
-        "shift": "09:00 AM - 06:00 PM",
-        "ok": 140,
-        "target": 150,
-        "rej": 1,
-        "tool_due": True,
-    },
+operators = [
+    "SANYOG KAMBLE",
+    "NITIN KUMBHAR",
+    "VIKAS KADAM",
+    "AMIT PATIL",
+    "ROHAN DESAI",
+    "SWAPNIL MORE",
+    "PRAVIN JADHAV",
+    "KIRAN SAWANT",
 ]
+
+parts_list = [
+    "GEAR BLANK - B05",
+    "VALVE BODY - V90",
+    "PUMP HOUSING - P22",
+    "FLANGE HUB - F14",
+    "PISTON PIN - K08",
+    "BEARING CAP - C19",
+    "SPINDLE NUT - S04",
+    "SHAFT COUPLING - A12",
+]
+
+machines_data = []
+for i in range(1, 41):
+    mid = f"CNC-{i:02d}"
+
+    if i <= 33:
+        status = "RUNNING"
+    elif i <= 37:
+        status = "IDLE"
+    else:
+        status = "ALARM"
+
+    is_warn = (i % 7 == 0)
+    is_where = (status == "ALARM") or (i % 9 == 0)
+    is_tool_due = (i % 8 == 0)
+
+    machines_data.append(
+        {
+            "id": mid,
+            "status": status,
+            "banner": "IMPROVEMENT NEEDED" if is_warn else "GOOD WORKING",
+            "banner_type": "warn" if is_warn else "good",
+            "where_r_u": is_where,
+            "tool_life": min(35 + (i * 2) % 60, 95),
+            "part": parts_list[(i - 1) % len(parts_list)],
+            "operator": operators[(i - 1) % len(operators)],
+            "shift": "09:00 AM - 06:00 PM" if i % 2 == 1 else "08:00 AM - 05:00 PM",
+            "ok": 70 + (i * 2) % 75,
+            "target": 150,
+            "rej": 1 if i % 4 == 0 else 0,
+            "tool_due": is_tool_due,
+        }
+    )
 
 machines_json = json.dumps(machines_data, ensure_ascii=False)
 
@@ -196,6 +137,14 @@ dashboard_html = f"""<!DOCTYPE html>
     background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid #16a34a;
     padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
   }}
+  .badge-idle {{
+    background: rgba(234, 179, 8, 0.18); color: #facc15; border: 1px solid #ca8a04;
+    padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  }}
+  .badge-alarm {{
+    background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid #dc2626;
+    padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  }}
   .banner-good {{
     background: rgba(22, 163, 74, 0.25); border: 1px solid #22c55e; color: #86efac;
     text-align: center; padding: 6px; border-radius: 8px; font-size: 11px; font-weight: 800;
@@ -246,21 +195,21 @@ dashboard_html = f"""<!DOCTYPE html>
   </div>
 
   <div class="kpi-grid-4">
-    <div class="kpi-card"><div class="kpi-lbl">TOTAL M/C</div><div class="kpi-val c-white">40</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">RUNNING</div><div class="kpi-val c-green">33</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">IDLE</div><div class="kpi-val c-yellow">4</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">ALARM</div><div class="kpi-val c-red">3</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">TOTAL M/C</div><div class="kpi-val c-white" id="kpiTotal">40</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">RUNNING</div><div class="kpi-val c-green" id="kpiRunning">0</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">IDLE</div><div class="kpi-val c-yellow" id="kpiIdle">0</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">ALARM</div><div class="kpi-val c-red" id="kpiAlarm">0</div></div>
   </div>
 
   <div class="kpi-grid-3">
-    <div class="kpi-card b-green"><div class="kpi-lbl c-green">☀️ GOOD WORK</div><div class="kpi-val c-green">25</div></div>
-    <div class="kpi-card b-red"><div class="kpi-lbl c-red">🚨 WHERE R U?</div><div class="kpi-val c-red">7</div></div>
-    <div class="kpi-card b-red"><div class="kpi-lbl c-red">🔧 TOOL ALERT</div><div class="kpi-val c-red">6</div></div>
+    <div class="kpi-card b-green"><div class="kpi-lbl c-green">☀️ GOOD WORK</div><div class="kpi-val c-green" id="kpiGood">0</div></div>
+    <div class="kpi-card b-red"><div class="kpi-lbl c-red">🚨 WHERE R U?</div><div class="kpi-val c-red" id="kpiWhere">0</div></div>
+    <div class="kpi-card b-red"><div class="kpi-lbl c-red">🔧 TOOL ALERT</div><div class="kpi-val c-red" id="kpiTool">0</div></div>
   </div>
 
   <div class="filter-bar">
     <input class="search-input" id="searchBox" type="text" placeholder="🔍 SEARCH MACHINE (CNC-01), OPERATOR OR PART NAME.." oninput="renderCards()" />
-    <button class="chip active" data-filter="ALL" onclick="setFilter('ALL', this)">ALL (40)</button>
+    <button class="chip active" data-filter="ALL" id="chipAll" onclick="setFilter('ALL', this)">ALL (40)</button>
     <button class="chip" data-filter="RUNNING" onclick="setFilter('RUNNING', this)">RUNNING</button>
     <button class="chip" data-filter="WHERE" onclick="setFilter('WHERE', this)">🚨 WHERE R U?</button>
     <button class="chip" data-filter="WARN" onclick="setFilter('WARN', this)">⚠️ IMPROVEMENT</button>
@@ -275,6 +224,17 @@ dashboard_html = f"""<!DOCTYPE html>
   let activeFilter = "ALL";
   let soundOn = false;
   let tvOn = false;
+
+  function updateKpis() {{
+    document.getElementById("kpiTotal").textContent = machines.length;
+    document.getElementById("kpiRunning").textContent = machines.filter(m => m.status === "RUNNING").length;
+    document.getElementById("kpiIdle").textContent = machines.filter(m => m.status === "IDLE").length;
+    document.getElementById("kpiAlarm").textContent = machines.filter(m => m.status === "ALARM").length;
+    document.getElementById("kpiGood").textContent = machines.filter(m => m.banner_type === "good").length;
+    document.getElementById("kpiWhere").textContent = machines.filter(m => m.where_r_u).length;
+    document.getElementById("kpiTool").textContent = machines.filter(m => m.tool_due).length;
+    document.getElementById("chipAll").textContent = `ALL (${{machines.length}})`;
+  }}
 
   function updateClock() {{
     const now = new Date();
@@ -300,6 +260,12 @@ dashboard_html = f"""<!DOCTYPE html>
     renderCards();
   }}
 
+  function getStatusBadge(status) {{
+    if (status === "IDLE") return `<span class="badge-idle">IDLE</span>`;
+    if (status === "ALARM") return `<span class="badge-alarm">ALARM</span>`;
+    return `<span class="badge-run">RUNNING</span>`;
+  }}
+
   function renderCards() {{
     const q = document.getElementById("searchBox").value.trim().toLowerCase();
     const grid = document.getElementById("cardsGrid");
@@ -309,6 +275,8 @@ dashboard_html = f"""<!DOCTYPE html>
         m.operator.toLowerCase().includes(q) ||
         m.part.toLowerCase().includes(q);
       if (!matchSearch) return false;
+      if (activeFilter === "RUNNING") return m.status === "RUNNING";
+      if (activeFilter === "WHERE") return m.where_r_u;
       if (activeFilter === "GOOD") return m.banner_type === "good";
       if (activeFilter === "WARN") return m.banner_type === "warn";
       if (activeFilter === "TOOL") return m.tool_due;
@@ -327,7 +295,7 @@ dashboard_html = f"""<!DOCTYPE html>
         <div class="m-card">
           <div class="m-top">
             <div class="m-id">${{m.id}}</div>
-            <span class="badge-run">${{m.status}}</span>
+            ${{getStatusBadge(m.status)}}
           </div>
           ${{bannerHtml}}
           ${{toolHtml}}
@@ -351,10 +319,11 @@ dashboard_html = f"""<!DOCTYPE html>
     }}).join("");
   }}
 
+  updateKpis();
   renderCards();
 </script>
 </body>
 </html>
 """
 
-components.html(dashboard_html, height=1350, scrolling=True)
+components.html(dashboard_html, height=2800, scrolling=True)
