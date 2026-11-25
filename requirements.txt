@@ -1,4 +1,2 @@
-"streamlit" | Out-File -Encoding utf8 requirements.txt
-"pandas" | Out-File -Encoding utf8 -Append requirements.txt
 streamlit
 pandas
